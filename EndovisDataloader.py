@@ -10,6 +10,7 @@ import json
 import random
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+#from tqdm.notebook import tqdm # for notebooks
 
 class Endovis2018Dataset(Dataset):
     def __init__(self, img_dir, label_dir, json_path, transform=None):
@@ -44,12 +45,15 @@ class Endovis2018Dataset(Dataset):
         # apply transforms with random seed so label and data get same transforms (for training)
        
         if self.transform:
-            image, label = self.transform(image,label)
+            image, label = self.transform(image,label, self.classes)
             
         return image, label
 
 def calculate_mean_std(dataloader):
+    '''
+    Calculate channel mean and std for a dataset of images
     
+    '''
     n_samples = 0
     channel_sum = torch.zeros(3)
     channel_squared_sum = torch.zeros(3)
@@ -68,6 +72,22 @@ def calculate_mean_std(dataloader):
     # Mean: [0.4641706645488739, 0.3407946527004242, 0.3625279366970062], Std: [0.2085169553756714, 0.19439055025577545, 0.20422272384166718]
     return mean.tolist(), std.tolist()
 
+def convert_label(img, classes):
+    '''
+    Convert img into segmentation image using the color codes in classes
+    '''
+    colors = np.array([np.array(c.get("color")) for c in classes])
+    img = np.int32(img * 255)
+    img = np.transpose(img, (1, 2, 0))
+    
+    reshaped_img = img.reshape(-1, 3)
+    # calc distance between pixel color and label colors
+    dist = np.linalg.norm(reshaped_img[:, None, :] - colors[None, :, :], axis=2)
+    # assign pixel to min distance label color
+    label_img = np.argmin(dist, axis=1)
+    label_img = label_img.reshape(img.shape[:2])
+    return label_img
+    
 # needed for synchronized transformations
 class SegmentationTransform:
     def __init__(self, image_size, mean, std, training):
@@ -76,7 +96,11 @@ class SegmentationTransform:
         self.std = std
         self.training = training
 
-    def __call__(self, image, label):
+    def __call__(self, image, label, classes):
+         # Resize image and label
+        image = F.resize(image, self.image_size)
+        label = F.resize(label, self.image_size)
+        
         # Convert to tensors
         image = F.to_tensor(image)
         label = F.to_tensor(label)
@@ -95,14 +119,13 @@ class SegmentationTransform:
 
         # Normalize the image
         image = F.normalize(image, mean=self.mean, std=self.std)
-
-        # Resize image and label
-        image = F.resize(image, self.image_size)
-        label = F.resize(label, self.image_size)
-
+        
+        # Convert label image colors to label numbers
+        label = convert_label(label, classes)
+        
         return image, label
 
-def getDataloaders(batch_size, reduce_factor):
+def getDataloaders(batch_size, reduce_factor, num_workers):
     # paths for data
     cur_dir = os.getcwd()
     data_path = os.path.join(cur_dir, "data")
@@ -144,11 +167,11 @@ def getDataloaders(batch_size, reduce_factor):
     )
     # create dataloaders
     train_dataset = Endovis2018Dataset(train_img_dir, train_label_dir, json_path, train_transform)
-    train_dataloader = DataLoader(train_dataset,batch_size=batch_size,shuffle=True,num_workers=4)
+    train_dataloader = DataLoader(train_dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
     val_dataset = Endovis2018Dataset(val_img_dir, val_label_dir, json_path, test_transform)
-    val_dataloader = DataLoader(val_dataset,batch_size=batch_size,shuffle=False,num_workers=4)
+    val_dataloader = DataLoader(val_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers)
     test_dataset = Endovis2018Dataset(test_img_dir, test_label_dir, json_path, test_transform)
-    test_dataloader = DataLoader(test_dataset,batch_size=batch_size,shuffle=False,num_workers=4)
+    test_dataloader = DataLoader(test_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers)
 
     print("--Data Information--")
     print("Actual Image Size:", image_size)
@@ -161,20 +184,33 @@ def getDataloaders(batch_size, reduce_factor):
 
 if __name__ == "__main__":
     # get dataloaders and display test images
-    batch_size = 32
+    batch_size = 10
     reduce_factor = 2 # how much to reduce image size by before training
-    train_dataloader, val_dataloader, test_dataloader = getDataloaders(batch_size, reduce_factor)
+    num_workers = 4 # 0 for colab/notebook
+    train_dataloader, val_dataloader, test_dataloader = getDataloaders(batch_size, reduce_factor,num_workers)
 
     #mean, std = calculate_mean_std(train_dataloader)
     #print(f"Mean: {mean}, Std: {std}")
     
-    # visualize data 
+     # visualize data 
     images,labels = next(iter(train_dataloader))
 
-    fig, axes = plt.subplots(5, 2, figsize=(20, 20))
-    for i in range(5):  # Flatten the 2D array of axes
+    n = 5
+    cmap = plt.get_cmap('Paired',12)
+    cbar_ticks = [0,1,2,3,4,5,6,7,8,9,10,11]
+    cbar_labels = ["Background Tissue", "Instrument Shaft", "Instrument Clasper", "Instrument Wrist", "Kidney Parenchyma", "Covered Kidney", 
+                "Thread", "Clamps", "Suturing Needle", "Suction Instrument", "Small Intestine", "Ultrasound Probe"]
+
+    fig, axes = plt.subplots(n, 2, figsize=(20, 20))
+    for i in range(n):  # Flatten the 2D array of axes
         axes[i,0].imshow(images[i].permute(1, 2, 0))  # Display the image in grayscale
-        axes[i,1].imshow(labels[i].permute(1, 2, 0))
-        
+        #axes[i,1].imshow(labels[i].permute(1, 2, 0))
+        im = axes[i,1].imshow(labels[i], cmap = cmap, vmin = 0, vmax = 11)
+        # colorbar settings
+        cbar = fig.colorbar(im, ax=axes[i, 1], fraction=0.046, pad=0.04)
+        cbar.set_label("Segmentation Labels", fontsize=10)
+        cbar.set_ticks(cbar_ticks)
+        cbar.set_ticklabels(cbar_labels)
+
+    plt.tight_layout()
     plt.show()
-            
