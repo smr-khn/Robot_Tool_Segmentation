@@ -72,7 +72,7 @@ def calculate_mean_std(dataloader):
     # Mean: [0.4641706645488739, 0.3407946527004242, 0.3625279366970062], Std: [0.2085169553756714, 0.19439055025577545, 0.20422272384166718]
     return mean.tolist(), std.tolist()
 
-def convert_label(img, classes):
+def convert_label_to_gray(img, classes):
     '''
     Convert img into segmentation image using the color codes in classes
     '''
@@ -86,8 +86,19 @@ def convert_label(img, classes):
     # assign pixel to min distance label color
     label_img = np.argmin(dist, axis=1)
     label_img = label_img.reshape(img.shape[:2])
-    return label_img
+    return torch.from_numpy(label_img)
+
+def convert_gray_to_masks(img, num_classes = 12):
+    '''
+    Convert 0-num_class grayscale image into num_class channel one hot encoded masks
+    '''
+    masks = np.eye(num_classes)[img].transpose(2, 0, 1)
+    return torch.from_numpy(masks)
     
+def convert_masks_to_gray(img):
+    gray_image = np.argmax(img, axis=0)
+    return gray_image
+
 # needed for synchronized transformations
 class SegmentationTransform:
     def __init__(self, image_size, mean, std, training):
@@ -121,7 +132,8 @@ class SegmentationTransform:
         image = F.normalize(image, mean=self.mean, std=self.std)
         
         # Convert label image colors to label numbers
-        label = convert_label(label, classes)
+        label = convert_label_to_gray(label, classes)
+        label = convert_gray_to_masks(label, 12)
         
         return image, label
 

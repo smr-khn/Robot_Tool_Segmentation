@@ -12,10 +12,10 @@ class MobileNetV2Encoder(nn.Module):
         # Extract the feature layers
         self.features = mobilenet_v2.features
         
-        self.map1 = nn.Sequential(*self.features[:2])  #1/2 res
-        self.map2 = nn.Sequential(*self.features[2:4]) #1/4 res
-        self.map3 = nn.Sequential(*self.features[4:7]) #1/8 res
-        self.map4 = nn.Sequential(*self.features[7:])  #1/32 res
+        self.map1 = nn.Sequential(*self.features[:4])  #1/4 res
+        self.map2 = nn.Sequential(*self.features[4:7]) #1/8 res
+        self.map3 = nn.Sequential(*self.features[7:11]) #1/16 res
+        self.map4 = nn.Sequential(*self.features[11:])  #1/32 res
 
     def forward(self, x):
         x1 = self.map1(x) 
