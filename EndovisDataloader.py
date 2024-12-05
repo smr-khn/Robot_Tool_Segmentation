@@ -108,16 +108,17 @@ class SegmentationTransform:
         self.training = training
 
     def __call__(self, image, label, classes):
-         # Resize image and label
-        image = F.resize(image, self.image_size)
-        label = F.resize(label, self.image_size)
-        
         # Convert to tensors
         image = F.to_tensor(image)
         label = F.to_tensor(label)
         
+        # Resize image and label
+        image = F.resize(image, self.image_size)
+        
         #only do these transforms for training
         if self.training:
+            # resize label for training 
+            label = F.resize(label, self.image_size, interpolation = F.InterpolationMode.NEAREST_EXACT)
             # Random Horizontal Flip
             if random.random() > 0.5:
                 image = F.hflip(image)
@@ -215,9 +216,10 @@ if __name__ == "__main__":
 
     fig, axes = plt.subplots(n, 2, figsize=(20, 20))
     for i in range(n):  # Flatten the 2D array of axes
-        axes[i,0].imshow(images[i].permute(1, 2, 0))  # Display the image in grayscale
+        axes[i,0].imshow(images[i].permute(1, 2, 0))  
         #axes[i,1].imshow(labels[i].permute(1, 2, 0))
-        im = axes[i,1].imshow(labels[i], cmap = cmap, vmin = 0, vmax = 11)
+        label_img = convert_masks_to_gray(labels[i])
+        im = axes[i,1].imshow(label_img, cmap = cmap, vmin = 0, vmax = 11) # Display the image in grayscale
         # colorbar settings
         cbar = fig.colorbar(im, ax=axes[i, 1], fraction=0.046, pad=0.04)
         cbar.set_label("Segmentation Labels", fontsize=10)

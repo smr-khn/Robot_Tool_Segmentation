@@ -11,7 +11,7 @@ class BBAModule(nn.Module):
         self.conv4_up_2_out = nn.Conv2d(channels[3], channels[2], kernel_size=3, padding=1)
         self.conv4_up_4 = nn.Conv2d(channels[3], channels[1], kernel_size=3, padding=1)
         self.conv4_up_8 = nn.Conv2d(channels[3], channels[0], kernel_size=3, padding=1)
-
+ 
         self.conv3_up_2 = nn.Conv2d(channels[2], channels[1], kernel_size=3, padding=1)
         self.conv3_up_4 = nn.Conv2d(channels[2], channels[0], kernel_size=3, padding=1)
 
