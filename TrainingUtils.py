@@ -13,7 +13,6 @@ def train(dataloader, model, criterion, optimizer, scheduler, epoch, device):
         img, label = img.to(device), label.to(device)
         output = model(img)
         loss = criterion(output, label)
-        
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -37,11 +36,9 @@ def test(model, dataloader, device):
         img, label = img.to(device), label.to(device)
         predict = model(img) # predict image
         predict = torch.argmax(predict, dim=1) # get grayscale prediction
-        predict =  masks = torch.eye(12)[predict] # 12 classes
+        predict = torch.eye(12, device=predict.device)[predict].permute(0,3,1,2)
+        predict = F.interpolate(predict.float(), size=label.shape[2:], mode="nearest-exact")  # Match label size
         
-        ## upsample prediction
-        
-        print(predict.shape, label.shape)
         intersection = (predict * label).sum(dim=(2, 3))  # Sum over spatial dimensions H and W
         union = predict.sum(dim=(2, 3)) + label.sum(dim=(2, 3))  # Sum over spatial dimensions H and W
         dice += ((2.0 * intersection + epsilon) / (union + epsilon)).mean()

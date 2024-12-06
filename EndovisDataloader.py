@@ -1,7 +1,6 @@
 # libraries
 import torch
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms as tfs
 import torchvision.transforms.functional as F
 import numpy as np
 from PIL import Image
@@ -109,9 +108,8 @@ class SegmentationTransform:
 
     def __call__(self, image, label, classes):
         # Convert to tensors
-        image = F.to_tensor(image)
-        label = F.to_tensor(label)
-        
+        image = F.to_tensor(image).permute(0, 2, 1) #flips H and W
+        label = F.to_tensor(label).permute(0, 2, 1)
         # Resize image and label
         image = F.resize(image, self.image_size)
         
@@ -131,7 +129,7 @@ class SegmentationTransform:
 
         # Normalize the image
         image = F.normalize(image, mean=self.mean, std=self.std)
-        
+
         # Convert label image colors to label numbers
         label = convert_label_to_gray(label, classes)
         label = convert_gray_to_masks(label, 12)
