@@ -73,7 +73,7 @@ class BAFSubModule(nn.Module):
         x_cat = torch.cat([x_high, x_low], dim=1)
         # print(f"x_high: {x_high.shape}, x_low: {x_low.shape}, x_cat: {x_cat.shape}")
         x = self.relu(self.conv(x_cat))
-        return 
+        return x
     
 
 
