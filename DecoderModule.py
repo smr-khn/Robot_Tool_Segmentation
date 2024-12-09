@@ -67,9 +67,9 @@ class BAFSubModule(nn.Module):
 
     def forward(self, x_high, x_low):
         x_high = self.high_res_att(x_high)
-        x_low = self.upsample(self.low_res_att(x_low))
-        if x_high.shape[2:] != x_low.shape[2:]:   # check if demensions for high res and low res match
-            x_low = F.interpolate(x_low, size=x_high.shape[2:], mode='bilinear', align_corners=False)
+        x_low = self.low_res_att(x_low)
+        # if x_high.shape[2:] != x_low.shape[2:]:   # check if demensions for high res and low res match
+        #     x_high = F.interpolate(x_high, size=x_low.shape[2:], mode='bilinear', align_corners=False)
         x_cat = torch.cat([x_high, x_low], dim=1)
         # print(f"x_high: {x_high.shape}, x_low: {x_low.shape}, x_cat: {x_cat.shape}")
         x = self.relu(self.conv(x_cat))
@@ -84,14 +84,29 @@ class DecoderModule(nn.Module):
         self.baf1 = BAFSubModule(channels[1], channels[0], channels[0])   # 1/8 and 1/4
         self.baf2 = BAFSubModule(channels[2], channels[1], channels[1])   # 1/16 and 1/8
         self.baf3 = BAFSubModule(channels[3], channels[2], channels[2])   # 1/32 and 1/16
-        self.conv = nn.Conv2d(channels[0], channels[0], kernel_size=3, padding=1)
-        self.relu = nn.ReLU()
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        #self.conv = nn.Conv2d(channels[0], channels[0], kernel_size=3, padding=1)
+        #self.relu = nn.ReLU()
+        
+        self.final_layer = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            nn.Conv2d(24, 24, kernel_size=3, padding=1), # for extra parameters and depth
+            nn.Sigmoid(),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            nn.Conv2d(24, 12, kernel_size=3, padding=1),
+            nn.Sigmoid()
+        )
 
     def forward(self, x1, x2, x3, x4):
         # print(f"x1: {x1.shape}, x2: {x2.shape}, x3: {x3.shape}, x4: {x4.shape}")
-        x_baf3 = self.baf3(x4, x3)  # 1/32 to 1/16
+        x_baf3 = self.baf3(x4, x3)  # 1/32 to 1/16]
+        x_baf3 = self.upsample(x_baf3)
+        print("x_baf3:", x_baf3.shape)
         x_baf2 = self.baf2(x_baf3, x2)  # 1/16 to 1/8
+        #x_baf2 = self.upsample(x_baf2)
+        print("x_baf2:", x_baf2.shape)
         x_baf1 = self.baf1(x_baf2, x1)  # 1/8 to 1/4
-        x = F.interpolate(x_baf1, size=x1.shape[2:], mode='bilinear', align_corners=False)
-        x = self.relu(self.conv(x))
+        #x = F.interpolate(x_baf1, size=x1.shape[2:], mode='bilinear', align_corners=False)
+        print("x_baf1:", x_baf1.shape)
+        x = self.final_layer(x_baf1)
         return x
