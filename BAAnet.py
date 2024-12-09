@@ -4,13 +4,14 @@ import torch.nn.functional as F
 
 import BBAModule
 import EncoderModule
+import DecoderModule
 
-class BAANet_BAA_Only(nn.Module):
+class BAANet_BBA_Only(nn.Module):
     '''
     BAAnet with BAF module removed and an adapted output sequence.
     '''
     def __init__(self, pretrained=True):
-        super(BAANet_BAA_Only, self).__init__()
+        super(BAANet_BBA_Only, self).__init__()
         
         self.encoder = EncoderModule.MobileNetV2Encoder(pretrained=pretrained)
         self.BBA = BBAModule.BBAModule([24,32,64,160])
@@ -50,6 +51,7 @@ class BAANet(nn.Module):
         
         self.encoder = EncoderModule.MobileNetV2Encoder(pretrained=pretrained)
         self.BBA = BBAModule.BBAModule([24,32,64,160])
+        self.decoder = DecoderModule.DecoderModule([24,32,64,64])
         
         self.final_layer = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
@@ -64,5 +66,6 @@ class BAANet(nn.Module):
         
         x1,x2,x3,x4 = self.encoder(x)
         x3_low, x2_low, x1_low, x1_high = self.BBA(x1,x2,x3,x4)
+        x = self.decoder(x3_low,x2_low,x1_low,x1_high)
         
-        return x3_low, x2_low, x1_low, x1_high
+        return x

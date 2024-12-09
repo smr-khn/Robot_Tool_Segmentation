@@ -18,7 +18,7 @@ class MobileNetV2Encoder(nn.Module):
         self.map4 = nn.Sequential(*self.features[11:17])  #1/32 res
 
     def forward(self, x):
-        x1 = self.map1(x) 
+        x1 = self.map1(x)
         x2 = self.map2(x1)
         x3 = self.map3(x2)
         x4 = self.map4(x3)
