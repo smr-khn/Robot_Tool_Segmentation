@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import numpy as np
+import torch.nn.functional as F
 
 
 class ChannelAttModule(nn.Module):
@@ -33,8 +33,8 @@ class SpatialAttModule(nn.Module):
     def forward(self, x):
         avg_out = torch.mean(x, dim=1, keepdim=True)
         max_out, _ = torch.max(x, dim=1, keepdim=True)
-        x = self.conv(torch.cat([avg_out, max_out], dim=1))
-        return x * self.sig(x)   # in paper computational graph, it shows refeeding of x, but in their github code, does not
+        att = self.sig(self.conv(torch.cat([avg_out, max_out], dim=1)))
+        return x * att   # in paper computational graph, it shows refeeding of x, but in their github code, does not
     
 
 
@@ -46,8 +46,11 @@ class FullAttModel(nn.Module):
         self.spatial_att = SpatialAttModule(kernel_size)
 
     def forward(self, x):
+        # print(f"Inp to FullAtt: {x.shape}")
         x = self.channel_att(x)
+        # print(f"Aft ChannelAtt: {x.shape}")
         x = self.spatial_att(x)
+        # print(f"Aft SpatialAtt: {x.shape}")
         return x
     
 
@@ -64,10 +67,13 @@ class BAFSubModule(nn.Module):
 
     def forward(self, x_high, x_low):
         x_high = self.high_res_att(x_high)
-        x_low = self.upsample(self.low_res_att(x_low))   # upsample low res to match high res
+        x_low = self.upsample(self.low_res_att(x_low))
+        if x_high.shape[2:] != x_low.shape[2:]:   # check if demensions for high res and low res match
+            x_low = F.interpolate(x_low, size=x_high.shape[2:], mode='bilinear', align_corners=False)
         x_cat = torch.cat([x_high, x_low], dim=1)
+        # print(f"x_high: {x_high.shape}, x_low: {x_low.shape}, x_cat: {x_cat.shape}")
         x = self.relu(self.conv(x_cat))
-        return x
+        return 
     
 
 
@@ -82,8 +88,10 @@ class DecoderModule(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x1, x2, x3, x4):
-        x_baf3 = self.baf3(x3, x4)
-        x_baf2 = self.baf2(x2, x_baf3)
-        x_baf1 = self.baf1(x1, x_baf2)
-        x = self.relu(self.conv(x_baf1))
+        # print(f"x1: {x1.shape}, x2: {x2.shape}, x3: {x3.shape}, x4: {x4.shape}")
+        x_baf3 = self.baf3(x4, x3)  # 1/32 to 1/16
+        x_baf2 = self.baf2(x_baf3, x2)  # 1/16 to 1/8
+        x_baf1 = self.baf1(x_baf2, x1)  # 1/8 to 1/4
+        x = F.interpolate(x_baf1, size=x1.shape[2:], mode='bilinear', align_corners=False)
+        x = self.relu(self.conv(x))
         return x
