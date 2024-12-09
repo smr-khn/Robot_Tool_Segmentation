@@ -22,10 +22,10 @@ class BAANet_BAA_Only(nn.Module):
         self.final_layer = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
             nn.Conv2d(24, 24, kernel_size=3, padding=1), # for extra parameters and depth
-            nn.Softmax(),
+            nn.Sigmoid(),
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
             nn.Conv2d(24, 12, kernel_size=3, padding=1),
-            nn.Softmax()
+            nn.Sigmoid()
         )
         
     def forward(self, x):
@@ -52,10 +52,12 @@ class BAANet(nn.Module):
         self.BBA = BBAModule.BBAModule([24,32,64,160])
         
         self.final_layer = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
             nn.Conv2d(24, 24, kernel_size=3, padding=1), # for extra parameters and depth
-            nn.ReLU(),
+            nn.Sigmoid(),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
             nn.Conv2d(24, 12, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Sigmoid()
         )
         
     def forward(self, x):
