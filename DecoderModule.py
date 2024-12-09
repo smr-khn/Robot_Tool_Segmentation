@@ -58,6 +58,7 @@ class FullAttModel(nn.Module):
 
 
 class BAFSubModule(nn.Module):
+    "BAF Sub Module"
     def __init__(self, channels_high, channels_low):
         super(BAFSubModule, self).__init__()
         self.channel_att_high = ChannelAttModule(channels_high)
