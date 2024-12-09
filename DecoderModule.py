@@ -95,15 +95,15 @@ class DecoderModule(nn.Module):
     def forward(self, y1, y2, y3, y4):
         # First BAF
         out3 = self.baf3(x_high=y4, x_low=y3)  
-        # print(f"out3 shape: {out3.shape}")   # [1, 24, 80, 56]
-        out3_upsample = F.interpolate(out3, size=(80, 56), mode='bilinear', align_corners=False)
+        # print(f"out3 shape: {out3.shape}")   # [1, 64, 20, 16]
+        out3_upsample = F.interpolate(out3, size=(20, 16), mode='bilinear', align_corners=False)
         # Second BAF
         out2 = self.baf2(x_high=out3_upsample, x_low=y2)  
         # print(f"out2 shape: {out2.shape}")   # [1, 32, 40, 32]
         out2_upsample = F.interpolate(out2, size=(40, 32), mode='bilinear', align_corners=False)
         # Third BAF
         out1 = self.baf1(x_high=out2_upsample, x_low=y1)  
-        # print(f"out1 shape: {out1.shape}")   # [1, 64, 20, 16]
-        out1_upsample = F.interpolate(out1, size=(20, 16), mode='bilinear', align_corners=False)
+        # print(f"out1 shape: {out1.shape}")   # [1, 24, 80, 64]
+        out1_upsample = F.interpolate(out1, size=(80, 64), mode='bilinear', align_corners=False)
         final_out = F.interpolate(out1_upsample, size=(320, 256), mode='bilinear', align_corners=False)
         return self.final_conv(final_out)
