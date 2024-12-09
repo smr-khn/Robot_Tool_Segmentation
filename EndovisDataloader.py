@@ -136,7 +136,7 @@ class SegmentationTransform:
         
         return image, label
 
-def getDataloaders(batch_size, reduce_factor, num_workers):
+def getDataloaders(batch_size, reduce_factor, num_workers, seed):
     # paths for data
     cur_dir = os.getcwd()
     data_path = os.path.join(cur_dir, "data")
@@ -178,11 +178,11 @@ def getDataloaders(batch_size, reduce_factor, num_workers):
     )
     # create dataloaders
     train_dataset = Endovis2018Dataset(train_img_dir, train_label_dir, json_path, train_transform)
-    train_dataloader = DataLoader(train_dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
+    train_dataloader = DataLoader(train_dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers,worker_init_fn=lambda worker_id: np.random.seed(seed + worker_id))
     val_dataset = Endovis2018Dataset(val_img_dir, val_label_dir, json_path, test_transform)
-    val_dataloader = DataLoader(val_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers)
+    val_dataloader = DataLoader(val_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers,worker_init_fn=lambda worker_id: np.random.seed(seed + worker_id))
     test_dataset = Endovis2018Dataset(test_img_dir, test_label_dir, json_path, test_transform)
-    test_dataloader = DataLoader(test_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers)
+    test_dataloader = DataLoader(test_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers,worker_init_fn=lambda worker_id: np.random.seed(seed + worker_id))
 
     print("--Data Information--")
     print("Actual Image Size:", image_size)

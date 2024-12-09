@@ -20,10 +20,13 @@ def train(train_dataloader, val_dataloader, model, criterion, optimizer, schedul
         scheduler.step(loss.mean().item())
         epoch_loss += loss.mean().item()
         
-        #print(f"Epoch #{epoch} Batch #{batch_idx}: Loss = {loss.mean().item()}")
+    mdice, miou, mdice_robot, miou_robot = 0, 0, 0, 0
+    training_loss = epoch_loss/ (batch_idx+1)
+    if epoch % 5 == 0:
+        mdice, miou, mdice_robot, miou_robot = test(model, val_dataloader, device)
+    print(f"Epoch {epoch}: Training Loss = {training_loss}, mDICE: {mdice}, mIoU: {miou} mDICE Robot: {mdice_robot}, mIoU Robot: {miou_robot}") # mean batch loss in epoch and test scores
     
-    mdice, miou, mdice_robot, miou_robot= test(model, val_dataloader, device)
-    print(f"Epoch {epoch}: Training Loss = {epoch_loss/ (batch_idx+1)}, mDICE: {mdice}, mIoU: {miou} mDICE Robot: {mdice_robot}, mIoU Robot: {miou_robot}") # mean batch loss in epoch and test scores
+    return [epoch, training_loss, mdice, miou, mdice_robot, miou_robot]
 
 def test(model, dataloader, device):
     '''

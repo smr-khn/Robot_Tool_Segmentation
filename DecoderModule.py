@@ -90,20 +90,25 @@ class DecoderModule(nn.Module):
         self.baf1 = BAFSubModule(channels[1], channels[0])   # 1/8 and 1/4
         self.baf2 = BAFSubModule(channels[2], channels[1])   # 1/16 and 1/8
         self.baf3 = BAFSubModule(channels[3], channels[2])   # 1/32 and 1/16
-        self.final_conv = nn.Conv2d(channels[0], 12, kernel_size=1)
+        self.final_layer = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            nn.Conv2d(24, 24, kernel_size=3, padding=1), # for extra parameters and depth
+            nn.Sigmoid(),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            nn.Conv2d(24, 12, kernel_size=3, padding=1),
+            nn.Sigmoid()
+        )
 
     def forward(self, y1, y2, y3, y4):
         # First BAF
         out3 = self.baf3(x_high=y4, x_low=y3)  
-        # print(f"out3 shape: {out3.shape}")   # [1, 64, 20, 16]
-        out3_upsample = F.interpolate(out3, size=(20, 16), mode='bilinear', align_corners=False)
+        print(f"out3 shape: {out3.shape}")   # [1, 64, 20, 16]
+        out3_upsample = F.interpolate(out3, size=(40, 32), mode='bilinear', align_corners=False)
         # Second BAF
         out2 = self.baf2(x_high=out3_upsample, x_low=y2)  
-        # print(f"out2 shape: {out2.shape}")   # [1, 32, 40, 32]
-        out2_upsample = F.interpolate(out2, size=(40, 32), mode='bilinear', align_corners=False)
+        print(f"out2 shape: {out2.shape}")   # [1, 32, 40, 32]
+        out2_upsample = F.interpolate(out2, size=(80, 64), mode='bilinear', align_corners=False)
         # Third BAF
         out1 = self.baf1(x_high=out2_upsample, x_low=y1)  
-        # print(f"out1 shape: {out1.shape}")   # [1, 24, 80, 64]
-        out1_upsample = F.interpolate(out1, size=(80, 64), mode='bilinear', align_corners=False)
-        final_out = F.interpolate(out1_upsample, size=(320, 256), mode='bilinear', align_corners=False)
-        return self.final_conv(final_out)
+        print(f"out1 shape: {out1.shape}")   # [1, 24, 80, 64]
+        return self.final_layer(out1)
