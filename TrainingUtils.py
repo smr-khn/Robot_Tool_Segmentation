@@ -1,4 +1,4 @@
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -22,6 +22,7 @@ def train(train_dataloader, val_dataloader, model, criterion, optimizer, schedul
         
     mdice, miou, mdice_robot, miou_robot = 0, 0, 0, 0
     training_loss = epoch_loss/ (batch_idx+1)
+    
     if epoch % 5 == 0:
         mdice, miou, mdice_robot, miou_robot = test(model, val_dataloader, device)
     print(f"Epoch {epoch}: Training Loss = {training_loss}, mDICE: {mdice}, mIoU: {miou} mDICE Robot: {mdice_robot}, mIoU Robot: {miou_robot}") # mean batch loss in epoch and test scores
