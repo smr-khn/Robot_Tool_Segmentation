@@ -17,7 +17,7 @@ def train(train_dataloader, val_dataloader, model, criterion, optimizer, schedul
         loss.backward()
         optimizer.step()
         
-        scheduler.step()
+        scheduler.step(loss.mean().item())
         epoch_loss += loss.mean().item()
         
     mdice, miou, mdice_robot, miou_robot = 0, 0, 0, 0
