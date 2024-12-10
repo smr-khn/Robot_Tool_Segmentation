@@ -136,7 +136,7 @@ class SegmentationTransform:
         
         return image, label
 
-def getDataloaders(batch_size, reduce_factor, num_workers, seed):
+def getDataloaders(batch_size, reduce_factor, num_workers, seed, shuffle = True):
     # paths for data
     cur_dir = os.getcwd()
     data_path = os.path.join(cur_dir, "data")
