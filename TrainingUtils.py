@@ -1,4 +1,4 @@
-from tqdm.auto import tqdm
+from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -17,7 +17,7 @@ def train(train_dataloader, val_dataloader, model, criterion, optimizer, schedul
         loss.backward()
         optimizer.step()
         
-        scheduler.step(loss.mean().item())
+        scheduler.step()
         epoch_loss += loss.mean().item()
         
     mdice, miou, mdice_robot, miou_robot = 0, 0, 0, 0
