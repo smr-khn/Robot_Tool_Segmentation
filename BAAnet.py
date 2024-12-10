@@ -77,6 +77,7 @@ class BAANet_BAF_Only(nn.Module):
         self.encoder = EncoderModule.MobileNetV2Encoder(pretrained=pretrained)
         self.decoder = DecoderModule.DecoderModule([24,32,64,64])
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        self.conv1 = nn.Conv2d(160, 64, kernel_size=3, padding=1)
         self.final_layer = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
             nn.Conv2d(24, 24, kernel_size=3, padding=1), # for extra parameters and depth
@@ -89,7 +90,8 @@ class BAANet_BAF_Only(nn.Module):
     def forward(self, x):
         
         x1,x2,x3,x4 = self.encoder(x)
-        x4 = self.upsample
+        x4 = self.upsample(x4)
+        x4 = self.conv1(x4)
         x = self.decoder(x1,x2,x3,x4)
         
         return x
