@@ -147,6 +147,9 @@ def getDataloaders(batch_size, reduce_factor, num_workers, seed):
     img_dir = [os.path.join(sub, 'frames') for sub in sub_dir] # frames is the left_frames folder
     label_dir = [os.path.join(sub, 'labels') for sub in sub_dir]
 
+    img_dir = sorted(img_dir)
+    label_dir = sorted(label_dir)
+    
     train_idx = [0,1,2,3,4,5,7,9,10,12,13] # train seq = 1,3,4,6,7,10,11,12,13,14,16
     val_idx = [6,8,11,14] # val seq = 2,5,9,15, random validation seqs from other papers
     test_idx = [15,16,17,18] # test seq = test_1, test_2. test_3, test_4 (last 4 sequences)
