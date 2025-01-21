@@ -1,6 +1,6 @@
 # Robot Tool Segmentation using Branch Aggregation Attention Network
 This repo uses an adaptation of the BAAnet from the paper Branch Aggregation Attention Network for
-Robotic Surgical Instrument Segmentation by W. Shen et al. The model was trained and tested on the Endovis 2018 dataset.
+Robotic Surgical Instrument Segmentation by W. Shen et al. The model was trained and tested on the Endovis 2018 dataset. Our results can be found in the project pdf.
 
 ## Contents
 ```EncoderModule.py```: Encoder module for BAAnet that leverages mobilenetv2.
