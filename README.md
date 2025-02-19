@@ -14,4 +14,4 @@ Robotic Surgical Instrument Segmentation by W. Shen et al. The model was trained
 ```TrainingUtils.py```: Helper functions for training and testing model
 
 ## How to Use
-In order to use or test the modules, you can import the classes and functions from above or use the two jupyter notebooks provided. ```BAAnet.ipynb`` is a notebook that runs better locally while ```Test_MLDL.ipynb``` runs better on Google Colab if that is your preferred method. Be wary of wear the data is located and follow the format used in the repo/notebook.
+In order to use or test the modules, you can import the classes and functions from above or use the two jupyter notebooks provided. ```BAAnet.ipynb``` is a notebook that runs better locally while ```Test_MLDL.ipynb``` runs better on Google Colab if that is your preferred method. Be wary of wear the data is located and follow the format used in the repo/notebook.
